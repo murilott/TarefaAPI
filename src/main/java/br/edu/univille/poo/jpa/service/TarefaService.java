@@ -74,9 +74,6 @@ public class TarefaService {
         List<Tarefa> todos = new ArrayList<Tarefa>();
 
         // LocalDateTime ldt = LocalDateTime.now();
-        LocalDate localDate = LocalDate.now();
-        ZoneId z = ZoneId.of( "Brazil/East" );
-        Date today = Date.from(localDate.atStartOfDay(z).toInstant());
         // LocalDate today = LocalDate.now( z );  // Always pass a time zone.
 
         for( var tarefa : tarefaRepository.findAll()) {
@@ -93,6 +90,9 @@ public class TarefaService {
         if(Strings.isBlank(tarefa.getTitulo())){
             throw new RuntimeException("Título não informado.");
         }
+        if(tarefa.getTitulo().length() < 5){
+            throw new RuntimeException("Título deve conter 5 ou mais caracteres.");
+        }
         if(Strings.isBlank(tarefa.getDesc())){
             throw new RuntimeException("Descrição não informado.");
         }
@@ -104,7 +104,7 @@ public class TarefaService {
             throw new RuntimeException("Tarefa não pode estar finalizada.");
         }
         // Adicionar verificação de datas posteriormente
-        
+
         tarefa = tarefaRepository.save(tarefa);
         return tarefa;
     }
@@ -114,6 +114,9 @@ public class TarefaService {
         
         if(antigo == null){
             throw new RuntimeException("tarefa não foi encontrada.");
+        }
+        if(tarefa.getTitulo().length() < 5){
+            throw new RuntimeException("Título deve conter 5 ou mais caracteres.");
         }
         if (tarefa.isFinalizado()) {
             throw new RuntimeException("Tarefa finalizada não pode ser atualizada.");
@@ -147,16 +150,24 @@ public class TarefaService {
         if(antigo == null){
             throw new RuntimeException("tarefa não encontrada.");
         }
+        if (tarefa.isFinalizado()) {
+            throw new RuntimeException("Tarefa finalizada não pode ser excluída.");
+        }
         tarefaRepository.delete(antigo);
     }
 
-    public void finalizar(Tarefa tarefa) {
+    public Tarefa finalizar(Tarefa tarefa) {
         var antigo = tarefaRepository.findById(tarefa.getId()).orElse(null);
+        LocalDate localDate = LocalDate.now();
+        ZoneId z = ZoneId.of( "Brazil/East" );
+        Date today = Date.from(localDate.atStartOfDay(z).toInstant());
+
         if(antigo == null){
             throw new RuntimeException("tarefa não encontrada.");
         }
         antigo.setFinalizado(true);
+        antigo.setDataFinalizado(today);
 
-        tarefaRepository.save(antigo);
+        return tarefaRepository.save(antigo);
     }
 }
